@@ -54,13 +54,44 @@ slide-guroo-ai/
 
 ## Quick Start
 
-### Prerequisites
+> **🐳 Recommended:** Use Docker for the easiest setup! See [Docker Setup](#docker-setup-recommended) below.
+
+### Option 1: Docker Setup (Recommended)
+
+**Perfect for MacBook Apple Silicon (M1/M2/M3)**
+
+1. **Install Docker Desktop**
+   - Download from: https://www.docker.com/products/docker-desktop/
+   - Ensure Docker is running
+
+2. **Configure API Key**
+   ```bash
+   cd be
+   cp .env.example .env
+   # Edit .env and add your OpenAI or Anthropic API key
+   ```
+
+3. **Start the Application**
+   ```bash
+   # From project root
+   docker-compose up
+   ```
+
+4. **Access the App**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000/docs
+
+**For detailed Docker instructions, see [DOCKER.md](DOCKER.md)**
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 
 - **Python** 3.9+
 - **Node.js** 18+
 - **OpenAI API Key** or **Anthropic API Key**
 
-### Backend Setup
+#### Backend Setup
 
 1. **Navigate to backend directory:**
    ```bash
@@ -101,7 +132,7 @@ slide-guroo-ai/
 
    Backend will start on `http://localhost:8000`
 
-### Frontend Setup
+#### Frontend Setup
 
 1. **Navigate to frontend directory:**
    ```bash
@@ -120,7 +151,7 @@ slide-guroo-ai/
 
    Frontend will start on `http://localhost:3000`
 
-### Access the Application
+#### Access the Application
 
 Open your browser and navigate to `http://localhost:3000`
 

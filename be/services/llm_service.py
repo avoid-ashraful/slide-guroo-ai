@@ -1,12 +1,13 @@
 """
 LLM Service for AI-powered content generation
-Supports OpenAI and Anthropic
+Supports OpenAI, Anthropic, and Google Gemini
 """
 import os
 import logging
 from typing import List, Dict, Any, Optional
 import anthropic
 import openai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +17,7 @@ class LLMService:
     """Service for interacting with LLM providers"""
 
     def __init__(self):
-        self.provider = os.getenv("LLM_PROVIDER", "openai").lower()
+        self.provider = os.getenv("LLM_PROVIDER", "gemini").lower()
 
         if self.provider == "openai":
             self.api_key = os.getenv("OPENAI_API_KEY")
@@ -28,6 +29,12 @@ class LLMService:
             self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-sonnet-20240229")
             if self.api_key:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
+        elif self.provider == "gemini":
+            self.api_key = os.getenv("GOOGLE_API_KEY")
+            self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+            if self.api_key:
+                genai.configure(api_key=self.api_key)
+                self.client = genai.GenerativeModel(self.model)
         else:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
 
@@ -58,6 +65,8 @@ class LLMService:
                 return await self._generate_openai(prompt, system_prompt, temperature, max_tokens)
             elif self.provider == "anthropic":
                 return await self._generate_anthropic(prompt, system_prompt, temperature, max_tokens)
+            elif self.provider == "gemini":
+                return await self._generate_gemini(prompt, system_prompt, temperature, max_tokens)
         except Exception as e:
             logger.error(f"Error generating completion: {str(e)}")
             raise
@@ -107,6 +116,29 @@ class LLMService:
         response = self.client.messages.create(**kwargs)
 
         return response.content[0].text
+
+    async def _generate_gemini(
+        self,
+        prompt: str,
+        system_prompt: Optional[str],
+        temperature: float,
+        max_tokens: int
+    ) -> str:
+        """Generate completion using Google Gemini"""
+        # Combine system prompt and user prompt for Gemini
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+
+        generation_config = genai.types.GenerationConfig(
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+        )
+
+        response = self.client.generate_content(
+            full_prompt,
+            generation_config=generation_config
+        )
+
+        return response.text
 
     async def generate_lesson_structure(
         self,
