@@ -14,61 +14,119 @@ SlideGuroo is an AI-powered educational platform designed for students (Class 6-
 - **Interactive Q&A**: Chat with AI tutor for instant explanations and clarifications
 - **Multilingual Support**: Seamless switching between English and Bangla (Bengali)
 - **Progressive Learning**: Step-by-step lesson structure with prerequisites and summaries
+- **User Authentication**: Secure JWT-based authentication with email verification
+- **Personal Dashboard**: Track your learning progress, lessons, and chat history
+- **Chat History**: All conversations saved and accessible anytime
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directories:
+
+### General Documentation
+- **[Docker Setup Guide](docs/DOCKER.md)** - Complete Docker setup instructions for macOS (Apple Silicon) and Linux
+- **[Docker Quick Start](docs/DOCKER-QUICKSTART.md)** - Quick reference for Docker commands
+
+### Backend Documentation
+- **[API Documentation](be/docs/API.md)** - Complete REST API reference with examples
+- **[Backend Setup Guide](be/docs/SETUP.md)** - Local development setup for backend
+- **[Authentication Status](be/docs/AUTH_IMPLEMENTATION_STATUS.md)** - Authentication implementation details
+
+### Frontend Documentation
+- **[Frontend Setup Guide](fe/docs/SETUP.md)** - Local development setup for frontend
+- **[User Guide](fe/docs/USER_GUIDE.md)** - Complete user manual for SlideGuroo
 
 ## Project Structure
 
 ```
 slide-guroo-ai/
+├── docs/                    # General documentation
+│   ├── DOCKER.md           # Docker setup guide
+│   └── DOCKER-QUICKSTART.md # Docker quick reference
+│
 ├── be/                      # Backend (Python/FastAPI)
+│   ├── docs/               # Backend documentation
+│   │   ├── API.md          # Complete API documentation
+│   │   ├── SETUP.md        # Setup guide
+│   │   └── AUTH_IMPLEMENTATION_STATUS.md
 │   ├── services/           # Business logic
-│   │   ├── content_extractor.py    # PPT/PDF parsing
-│   │   ├── llm_service.py          # LLM integration (OpenAI/Anthropic)
-│   │   ├── diagram_service.py      # Mermaid diagram generation
-│   │   └── lesson_generator.py     # Main lesson orchestration
+│   │   ├── lesson_service.py       # Lesson CRUD
+│   │   ├── chat_history_service.py # Chat management
+│   │   ├── lesson_generator.py     # AI lesson generation
+│   │   └── content_extractor.py    # PPT/PDF parsing
 │   ├── routers/            # API endpoints
+│   │   ├── auth.py         # Authentication endpoints
 │   │   ├── slides.py       # Slide upload endpoints
 │   │   ├── topics.py       # Topic generation endpoints
 │   │   ├── chat.py         # Q&A chat endpoints
-│   │   └── diagrams.py     # Diagram generation endpoints
+│   │   ├── diagrams.py     # Diagram generation endpoints
+│   │   └── dashboard.py    # User dashboard endpoints
+│   ├── tests/              # Backend tests
+│   │   └── test_auth.py    # Authentication tests
+│   ├── database.py         # Database configuration
+│   ├── db_models.py        # SQLAlchemy models
+│   ├── auth_utils.py       # JWT utilities
+│   ├── email_service.py    # Email service
 │   ├── models.py           # Pydantic data models
 │   ├── main.py            # FastAPI application
 │   └── requirements.txt    # Python dependencies
 │
 ├── fe/                     # Frontend (React/Vite)
+│   ├── docs/              # Frontend documentation
+│   │   ├── SETUP.md       # Setup guide
+│   │   └── USER_GUIDE.md  # User manual
 │   ├── src/
 │   │   ├── components/    # React components
 │   │   │   ├── Header.jsx
-│   │   │   └── MermaidDiagram.jsx
+│   │   │   ├── MermaidDiagram.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── context/       # React Context providers
+│   │   │   └── AuthContext.jsx
 │   │   ├── pages/         # Page components
-│   │   │   ├── Home.jsx           # Slide upload page
-│   │   │   ├── TopicGenerator.jsx # Topic learning page
-│   │   │   └── LessonView.jsx     # Lesson display page
+│   │   │   ├── Home.jsx            # Slide upload page
+│   │   │   ├── TopicGenerator.jsx  # Topic learning page
+│   │   │   ├── LessonView.jsx      # Lesson display page
+│   │   │   ├── Login.jsx           # Login page
+│   │   │   ├── Signup.jsx          # Registration page
+│   │   │   ├── Dashboard.jsx       # User dashboard
+│   │   │   ├── VerifyEmail.jsx     # Email verification
+│   │   │   ├── ForgotPassword.jsx  # Password reset request
+│   │   │   └── ResetPassword.jsx   # Password reset form
 │   │   ├── services/      # API client
-│   │   │   └── api.js
+│   │   │   ├── api.js            # Main API client
+│   │   │   └── authService.js    # Authentication service
 │   │   ├── App.jsx        # Main app component
 │   │   └── main.jsx       # Entry point
 │   └── package.json       # Node dependencies
 │
+├── docker-compose.yml      # Docker orchestration
 └── README.md              # This file
 ```
 
 ## Quick Start
 
-> **🐳 Recommended:** Use Docker for the easiest setup! See [Docker Setup](#docker-setup-recommended) below.
+> **🐳 Recommended:** Use Docker for the easiest setup! See [Docker Setup Guide](docs/DOCKER.md) for complete instructions.
 
 ### Option 1: Docker Setup (Recommended)
 
-**Perfect for MacBook Apple Silicon (M1/M2/M3)**
+**Perfect for MacBook Apple Silicon (M1/M2/M3) and Linux**
 
 1. **Install Docker Desktop**
    - Download from: https://www.docker.com/products/docker-desktop/
    - Ensure Docker is running
 
-2. **Configure API Key**
+2. **Configure Environment**
    ```bash
+   # Backend configuration
    cd be
    cp .env.example .env
-   # Edit .env and add your OpenAI or Anthropic API key
+   # Edit .env and add your API keys:
+   # - GOOGLE_API_KEY (recommended) or OPENAI_API_KEY
+   # - SECRET_KEY (generate with: python -c "import secrets; print(secrets.token_urlsafe(32))")
+   # - Email credentials (optional for development)
+
+   # Frontend configuration
+   cd ../fe
+   cp .env.example .env
    ```
 
 3. **Start the Application**
@@ -79,58 +137,72 @@ slide-guroo-ai/
 
 4. **Access the App**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000/docs
+   - Backend API: http://localhost:8000
+   - API Docs (Swagger): http://localhost:8000/docs
+   - Database: localhost:5432
 
-**For detailed Docker instructions, see [DOCKER.md](DOCKER.md)**
+5. **Create Your Account**
+   - Visit http://localhost:3000/signup
+   - Register with your email
+   - Check console for verification email (dev mode)
+   - Start creating lessons!
+
+**For detailed Docker instructions, see [docs/DOCKER.md](docs/DOCKER.md)**
 
 ### Option 2: Manual Setup
 
 #### Prerequisites
 
-- **Python** 3.9+
+- **Python** 3.10+
 - **Node.js** 18+
-- **OpenAI API Key** or **Anthropic API Key**
+- **PostgreSQL** 15+
+- **Google Gemini API Key** (recommended) or **OpenAI API Key**
 
 #### Backend Setup
 
-1. **Navigate to backend directory:**
+1. **Set up PostgreSQL database:**
+   ```bash
+   # Using psql
+   createdb slideguroo_db
+   ```
+
+2. **Navigate to backend directory:**
    ```bash
    cd be
    ```
 
-2. **Create virtual environment:**
+3. **Create virtual environment:**
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies:**
+4. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure environment:**
+5. **Configure environment:**
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` and add your API key:
+   Edit `.env` and configure:
    ```env
-   # Use OpenAI
-   LLM_PROVIDER=openai
-   OPENAI_API_KEY=your_openai_api_key_here
-
-   # OR use Anthropic
-   LLM_PROVIDER=anthropic
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   DATABASE_URL=postgresql+asyncpg://slideguroo:slideguroo123@localhost:5432/slideguroo_db
+   GOOGLE_API_KEY=your_google_api_key_here
+   SECRET_KEY=your-super-secret-key-min-32-chars
+   FRONTEND_URL=http://localhost:3000
    ```
 
-5. **Run the backend:**
+6. **Run the backend:**
    ```bash
    python main.py
    ```
 
    Backend will start on `http://localhost:8000`
+
+**For detailed setup instructions, see [be/docs/SETUP.md](be/docs/SETUP.md)**
 
 #### Frontend Setup
 
@@ -144,57 +216,83 @@ slide-guroo-ai/
    npm install
    ```
 
-3. **Run the frontend:**
+3. **Configure environment (optional):**
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Run the frontend:**
    ```bash
    npm run dev
    ```
 
-   Frontend will start on `http://localhost:3000`
+   Frontend will start on `http://localhost:5173`
+
+**For detailed setup instructions, see [fe/docs/SETUP.md](fe/docs/SETUP.md)**
 
 #### Access the Application
 
-Open your browser and navigate to `http://localhost:3000`
+1. Open browser at `http://localhost:5173`
+2. Sign up for an account
+3. Verify your email (check console in dev mode)
+4. Start creating lessons!
 
 ## Usage Guide
 
-### Upload Slides
+**For complete user guide, see [fe/docs/USER_GUIDE.md](fe/docs/USER_GUIDE.md)**
 
-1. Go to the home page
-2. Drag and drop or click to upload PPT/PPTX/PDF/DOCX files
-3. Select difficulty level (Beginner/Intermediate/Advanced)
-4. Choose whether to generate diagrams
-5. Click "Generate Lesson"
-6. View your comprehensive lesson with interactive diagrams
+### Getting Started
 
-### Learn Any Topic
+1. **Create Account**
+   - Visit `/signup` and register
+   - Verify your email
+   - Login at `/login`
 
-1. Click "Learn Topic" in the navigation
-2. Enter any topic (e.g., "Photosynthesis", "World War 2", "Quantum Physics")
-3. Select difficulty level and language
-4. Click "Generate Lesson"
-5. AI will research and create a comprehensive lesson
+2. **Upload Slides**
+   - Go to home page
+   - Upload PPT/PPTX/PDF files
+   - Select difficulty level and language
+   - Generate AI lesson
 
-### Interactive Q&A
+3. **Learn Topics**
+   - Click "Learn Topic"
+   - Enter any subject
+   - Get comprehensive AI-generated lesson
 
-1. While viewing a lesson, click "Ask Questions"
-2. Type your question in the chat panel
-3. Get instant, detailed explanations
-4. Receive related concepts and additional examples
+4. **Interactive Q&A**
+   - Ask questions in any lesson
+   - Get detailed explanations
+   - View conversation history
 
-### Language Switching
+5. **Dashboard**
+   - Track all your lessons
+   - View statistics
+   - Manage content
 
-Use the language selector in the header to switch between English and Bangla at any time.
+### Authentication Features
+
+- **Secure Login**: JWT-based authentication
+- **Email Verification**: Verify your email to access all features
+- **Password Reset**: Secure password recovery via email
+- **Profile Management**: View and manage your account
+- **Privacy**: All lessons and chats are private to your account
 
 ## API Documentation
 
-Once the backend is running, visit `http://localhost:8000/docs` for interactive API documentation (Swagger UI).
+**Complete API documentation is available at [be/docs/API.md](be/docs/API.md)**
 
-### Main Endpoints
+### Interactive API Docs
 
-- **POST /api/slides/upload** - Upload and process slides
-- **POST /api/topics/generate** - Generate lesson from topic
-- **POST /api/chat/ask** - Ask questions about lessons
-- **POST /api/diagrams/generate** - Generate diagrams
+Once the backend is running, visit `http://localhost:8000/docs` for Swagger UI.
+
+### Main Endpoint Categories
+
+- **Authentication** (`/api/auth/*`) - User registration, login, verification
+- **Slides** (`/api/slides/*`) - Upload and process presentations
+- **Topics** (`/api/topics/*`) - Generate lessons from topics
+- **Chat** (`/api/chat/*`) - Q&A and conversation history
+- **Diagrams** (`/api/diagrams/*`) - Generate visual diagrams
+- **Dashboard** (`/api/dashboard/*`) - User statistics and management
 
 ## Features in Detail
 
@@ -245,54 +343,79 @@ Once the backend is running, visit `http://localhost:8000/docs` for interactive 
 
 ### Backend
 - **FastAPI** - Modern Python web framework
+- **PostgreSQL** - Relational database
+- **SQLAlchemy** - ORM with async support
+- **Alembic** - Database migrations
+- **JWT** - JSON Web Tokens for authentication
+- **Bcrypt** - Password hashing
+- **FastAPI-Mail** - Email service
 - **Python-PPTX** - PowerPoint parsing
 - **PyPDF2** - PDF extraction
-- **OpenAI API** - GPT models for content generation
+- **Google Gemini API** - Primary LLM provider
+- **OpenAI API** - GPT models (alternative)
 - **Anthropic API** - Claude models (alternative)
 - **Pydantic** - Data validation
+- **Pytest** - Testing framework
 
 ### Frontend
-- **React** - UI library
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
+- **React 18** - UI library
+- **Vite** - Build tool and dev server
+- **React Router v6** - Client-side routing
+- **React Context** - State management
+- **Tailwind CSS** - Utility-first CSS framework
 - **Mermaid.js** - Diagram rendering
-- **React Router** - Navigation
-- **Axios** - HTTP client
-- **React Markdown** - Markdown rendering
+- **Axios** - HTTP client with interceptors
+- **Lucide React** - Icon library
 
 ## Configuration
 
 ### Backend Configuration (.env)
 
 ```env
-# LLM Provider (openai or anthropic)
-LLM_PROVIDER=openai
+# Database
+DATABASE_URL=postgresql+asyncpg://slideguroo:slideguroo123@localhost:5432/slideguroo_db
 
-# API Keys
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
+# LLM API Keys
+GOOGLE_API_KEY=your_google_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# Models
-OPENAI_MODEL=gpt-4-turbo-preview
-ANTHROPIC_MODEL=claude-3-sonnet-20240229
+# Authentication
+SECRET_KEY=your-super-secret-key-min-32-characters
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
+
+# Email Configuration
+MAIL_USERNAME=your-email@example.com
+MAIL_PASSWORD=your-email-password
+MAIL_FROM=noreply@slideguroo.com
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_TLS=True
+
+# Application
+FRONTEND_URL=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Server
 HOST=0.0.0.0
 PORT=8000
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Upload
-MAX_UPLOAD_SIZE=10485760
+MAX_UPLOAD_SIZE=52428800  # 50 MB
 UPLOAD_DIR=./uploads
 ```
 
 ### Frontend Configuration
 
-Create `.env` in `fe/` directory (optional):
+Create `.env` in `fe/` directory:
 
 ```env
 VITE_API_URL=http://localhost:8000/api
 ```
+
+**Note**: Environment variable documentation is available in:
+- [be/docs/SETUP.md](be/docs/SETUP.md) - Backend configuration details
+- [fe/docs/SETUP.md](fe/docs/SETUP.md) - Frontend configuration details
 
 ## Development
 
@@ -320,33 +443,62 @@ npm run dev  # Hot module replacement enabled
 
 ## Testing
 
+### Running Backend Tests
+
+```bash
+cd be
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_auth.py
+
+# Run with verbose output
+pytest -v
+```
+
 ### Manual Testing Checklist
 
-1. **Slide Upload**
+1. **Authentication**
+   - [ ] User registration
+   - [ ] Email verification
+   - [ ] Login/logout
+   - [ ] Password reset
+   - [ ] Protected routes
+
+2. **Slide Upload**
    - [ ] Upload PPT file
    - [ ] Upload PDF file
-   - [ ] Upload DOCX file
    - [ ] Test error handling for invalid files
    - [ ] Verify lesson generation
+   - [ ] Check lesson appears in dashboard
 
-2. **Topic Generation**
+3. **Topic Generation**
    - [ ] Generate lesson for science topic
    - [ ] Generate lesson for history topic
-   - [ ] Generate lesson for math topic
    - [ ] Test language switching
    - [ ] Verify diagrams are generated
+   - [ ] Save to dashboard
 
-3. **Lesson Navigation**
+4. **Lesson Navigation**
    - [ ] Navigate through sections
    - [ ] View diagrams
    - [ ] Check key points and examples
-   - [ ] Read lesson summary
 
-4. **Q&A Chat**
+5. **Q&A Chat**
    - [ ] Ask questions in English
    - [ ] Ask questions in Bangla
    - [ ] Verify context-aware responses
-   - [ ] Check related concepts
+   - [ ] Check chat history saves
+
+6. **Dashboard**
+   - [ ] View lesson statistics
+   - [ ] Delete lessons
+   - [ ] View recent activity
 
 ## Troubleshooting
 
@@ -395,23 +547,35 @@ npm list mermaid
 
 ## Roadmap
 
-### Phase 1 (MVP) - Completed ✓
+### Phase 1 - Core Features ✅ COMPLETED
 - [x] Slide upload and processing
 - [x] Topic-based lesson generation
 - [x] Diagram generation
 - [x] Interactive Q&A
 - [x] Multilingual support (English/Bangla)
 
-### Phase 2 (Future Enhancements)
-- [ ] User authentication and profiles
-- [ ] Lesson history and bookmarks
-- [ ] Quiz generation
-- [ ] Progress tracking
-- [ ] Mobile app
+### Phase 2 - Authentication & User Management ✅ COMPLETED
+- [x] User authentication (JWT)
+- [x] Email verification
+- [x] Password reset
+- [x] User dashboard
+- [x] Lesson history and management
+- [x] Chat history persistence
+- [x] User statistics
+
+### Phase 3 - Future Enhancements 🚀
+- [ ] Quiz generation from lessons
+- [ ] Progress tracking and analytics
+- [ ] Lesson bookmarking and favorites
+- [ ] Export lessons to PDF
+- [ ] Mobile responsive improvements
 - [ ] Collaborative learning features
-- [ ] More languages (Hindi, Urdu, etc.)
+- [ ] More languages (Hindi, Urdu, Spanish, etc.)
 - [ ] Video content integration
 - [ ] Offline mode
+- [ ] Teacher dashboard
+- [ ] Classroom management
+- [ ] Student performance analytics
 
 ## Contributing
 
