@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 import logging
 
-from routers import slides, topics, chat, diagrams, auth
+from routers import slides, topics, chat, diagrams, auth, dashboard
 from database import engine, Base
 
 # Load environment variables
@@ -72,6 +72,7 @@ app.include_router(slides.router, prefix="/api/slides", tags=["Slides"])
 app.include_router(topics.router, prefix="/api/topics", tags=["Topics"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(diagrams.router, prefix="/api/diagrams", tags=["Diagrams"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 
 @app.get("/")
 async def root():

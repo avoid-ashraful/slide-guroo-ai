@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenManager } from './authService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -8,6 +9,37 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Request interceptor to add authentication token
+api.interceptors.request.use(
+  (config) => {
+    const token = tokenManager.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle authentication errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token expired or invalid - clear auth data
+      tokenManager.clear();
+
+      // Redirect to login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const slideAPI = {
   uploadSlide: async (file, language = 'en', difficultyLevel = 'intermediate', includeDiagrams = true) => {
@@ -63,6 +95,36 @@ export const diagramAPI = {
       diagram_type: diagramType,
       context,
     });
+    return response.data;
+  },
+};
+
+export const dashboardAPI = {
+  getLessons: async (skip = 0, limit = 20, sourceType = null) => {
+    const params = new URLSearchParams({ skip, limit });
+    if (sourceType) params.append('source_type', sourceType);
+
+    const response = await api.get(`/dashboard/lessons?${params.toString()}`);
+    return response.data;
+  },
+
+  getLessonDetail: async (lessonId) => {
+    const response = await api.get(`/dashboard/lessons/${lessonId}`);
+    return response.data;
+  },
+
+  deleteLesson: async (lessonId) => {
+    const response = await api.delete(`/dashboard/lessons/${lessonId}`);
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/dashboard/stats');
+    return response.data;
+  },
+
+  getRecentActivity: async (limit = 10) => {
+    const response = await api.get(`/dashboard/recent-activity?limit=${limit}`);
     return response.data;
   },
 };
