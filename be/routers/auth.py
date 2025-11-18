@@ -14,6 +14,7 @@ from db_models import User
 from auth_utils import (
     get_password_hash,
     verify_password,
+    validate_password_strength,
     create_access_token,
     create_verification_token,
     create_reset_token,
@@ -73,9 +74,21 @@ class EmailVerification(BaseModel):
     token: str
 
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     """Register a new user"""
+
+    # Validate password strength
+    is_valid, error_message = validate_password_strength(user_data.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
 
     # Check if email already exists
     existing_user = await get_user_by_email(db, user_data.email)
@@ -107,9 +120,17 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         verification_token_expires=token_expires
     )
 
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
+    try:
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+    except Exception as e:
+        logger.error(f"Database error during registration: {str(e)}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred during registration. Please try again."
+        )
 
     # Send verification email
     try:
@@ -146,8 +167,13 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
         )
 
     # Update last login
-    user.last_login = datetime.utcnow()
-    await db.commit()
+    try:
+        user.last_login = datetime.utcnow()
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Database error updating last login: {str(e)}")
+        # Don't fail login if we can't update last_login
+        await db.rollback()
 
     # Create access token
     access_token = create_access_token(data={"sub": user.id})
@@ -183,7 +209,15 @@ async def verify_email(verification: EmailVerification, db: AsyncSession = Depen
     user.verification_token = None
     user.verification_token_expires = None
 
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Database error during email verification: {str(e)}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred during verification. Please try again."
+        )
 
     # Send welcome email
     try:
@@ -195,10 +229,10 @@ async def verify_email(verification: EmailVerification, db: AsyncSession = Depen
 
 
 @router.post("/resend-verification")
-async def resend_verification(email: EmailStr, db: AsyncSession = Depends(get_db)):
+async def resend_verification(request: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
     """Resend verification email"""
 
-    user = await get_user_by_email(db, email)
+    user = await get_user_by_email(db, request.email)
 
     if not user:
         # Don't reveal if email exists
@@ -217,7 +251,13 @@ async def resend_verification(email: EmailStr, db: AsyncSession = Depends(get_db
     user.verification_token = verification_token
     user.verification_token_expires = token_expires
 
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Database error during resend verification: {str(e)}")
+        await db.rollback()
+        # Don't reveal error details
+        return {"message": "If the email exists, a verification link has been sent"}
 
     # Send verification email
     try:
@@ -245,7 +285,13 @@ async def forgot_password(request: PasswordResetRequest, db: AsyncSession = Depe
     user.reset_token = reset_token
     user.reset_token_expires = token_expires
 
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Database error during password reset request: {str(e)}")
+        await db.rollback()
+        # Don't reveal error details
+        return {"message": "If the email exists, a password reset link has been sent"}
 
     # Send reset email
     try:
@@ -279,12 +325,28 @@ async def reset_password(reset_data: PasswordReset, db: AsyncSession = Depends(g
             detail="Reset token has expired"
         )
 
+    # Validate new password strength
+    is_valid, error_message = validate_password_strength(reset_data.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
+
     # Update password
     user.hashed_password = get_password_hash(reset_data.new_password)
     user.reset_token = None
     user.reset_token_expires = None
 
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Database error during password reset: {str(e)}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while resetting password. Please try again."
+        )
 
     return {"message": "Password reset successfully"}
 

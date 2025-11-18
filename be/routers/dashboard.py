@@ -30,7 +30,7 @@ async def get_user_lessons(
 
     Args:
         skip: Number of lessons to skip (pagination)
-        limit: Maximum number of lessons to return
+        limit: Maximum number of lessons to return (max 100)
         source_type: Filter by source type ('upload' or 'topic')
         current_user: Authenticated user
         db: Database session
@@ -38,6 +38,13 @@ async def get_user_lessons(
     Returns:
         List of user's lessons with metadata
     """
+    # Enforce maximum pagination limit
+    MAX_LIMIT = 100
+    if limit > MAX_LIMIT:
+        limit = MAX_LIMIT
+    if skip < 0:
+        skip = 0
+
     try:
         lessons = await lesson_service.get_user_lessons(
             db=db,
@@ -77,7 +84,7 @@ async def get_user_lessons(
 
     except Exception as e:
         logger.error(f"Error fetching user lessons: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching lessons: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to fetch lessons. Please try again later.")
 
 
 @router.get("/lessons/{lesson_id}")
@@ -125,7 +132,7 @@ async def get_lesson_detail(
         raise
     except Exception as e:
         logger.error(f"Error fetching lesson detail: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching lesson: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to fetch lesson details. Please try again later.")
 
 
 @router.delete("/lessons/{lesson_id}")
@@ -186,7 +193,7 @@ async def delete_lesson(
         raise
     except Exception as e:
         logger.error(f"Error deleting lesson: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error deleting lesson: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to delete lesson. Please try again later.")
 
 
 @router.get("/stats")
@@ -275,7 +282,7 @@ async def get_user_stats(
 
     except Exception as e:
         logger.error(f"Error fetching user stats: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to fetch statistics. Please try again later.")
 
 
 @router.get("/recent-activity")
@@ -288,13 +295,20 @@ async def get_recent_activity(
     Get user's recent activity (recent lessons and chats)
 
     Args:
-        limit: Maximum number of items to return
+        limit: Maximum number of items to return (max 100)
         current_user: Authenticated user
         db: Database session
 
     Returns:
         Recent lessons and chat messages
     """
+    # Enforce maximum pagination limit
+    MAX_LIMIT = 100
+    if limit > MAX_LIMIT:
+        limit = MAX_LIMIT
+    if limit < 0:
+        limit = 10  # Reset to default if negative
+
     try:
         # Get recent lessons
         recent_lessons_result = await db.execute(
@@ -336,7 +350,7 @@ async def get_recent_activity(
 
     except Exception as e:
         logger.error(f"Error fetching recent activity: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching activity: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to fetch recent activity. Please try again later.")
 
 
 @router.get("/health")

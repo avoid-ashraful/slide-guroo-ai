@@ -45,7 +45,7 @@ class UserLesson(Base):
     __tablename__ = "user_lessons"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
 
     # Lesson data
     lesson_data = Column(JSON, nullable=False)  # Stores the entire lesson object
@@ -72,8 +72,8 @@ class ChatHistory(Base):
     __tablename__ = "chat_history"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    lesson_id = Column(String, ForeignKey("user_lessons.id"), nullable=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    lesson_id = Column(String, ForeignKey("user_lessons.id"), nullable=True, index=True)
 
     # Message data
     role = Column(String, nullable=False)  # 'user' or 'assistant'

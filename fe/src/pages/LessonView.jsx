@@ -57,7 +57,7 @@ function LessonView({ currentLanguage }) {
       timestamp: new Date().toISOString(),
     }
 
-    setChatMessages([...chatMessages, userMessage])
+    setChatMessages(prev => [...prev, userMessage])
     setQuestion('')
     setLoadingAnswer(true)
 
@@ -83,7 +83,7 @@ Content: ${currentSection.content}
         additional_examples: response.additional_examples,
       }
 
-      setChatMessages([...chatMessages, userMessage, assistantMessage])
+      setChatMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Error asking question:', error)
       const errorMessage = {
@@ -91,7 +91,7 @@ Content: ${currentSection.content}
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date().toISOString(),
       }
-      setChatMessages([...chatMessages, userMessage, errorMessage])
+      setChatMessages(prev => [...prev, errorMessage])
     } finally {
       setLoadingAnswer(false)
     }

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import shutil
 import logging
+import re
 from typing import Optional
 import aiofiles
 import uuid
@@ -25,8 +26,9 @@ router = APIRouter()
 # Initialize lesson generator
 lesson_generator = LessonGenerator()
 
-# Get upload directory from env
+# Get upload directory and size limit from env
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # Default 50MB
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload", response_model=SlideUploadResponse)
@@ -62,8 +64,34 @@ async def upload_slide(
             detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
         )
 
-    # Create user-specific upload directory
-    user_upload_dir = os.path.join(UPLOAD_DIR, current_user.id)
+    # Read file content and validate size
+    content = await file.read()
+    file_size = len(content)
+
+    logger.info(f"File size: {file_size} bytes (max: {MAX_UPLOAD_SIZE} bytes)")
+
+    if file_size > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB"
+        )
+
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="File is empty"
+        )
+
+    # Create user-specific upload directory with sanitized user_id
+    # Sanitize user_id to prevent path traversal attacks
+    safe_user_id = re.sub(r'[^a-zA-Z0-9_-]', '', current_user.id)
+    if not safe_user_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid user ID format"
+        )
+
+    user_upload_dir = os.path.join(UPLOAD_DIR, safe_user_id)
     os.makedirs(user_upload_dir, exist_ok=True)
 
     # Generate unique filename
@@ -73,7 +101,6 @@ async def upload_slide(
     try:
         # Save uploaded file
         async with aiofiles.open(file_path, 'wb') as out_file:
-            content = await file.read()
             await out_file.write(content)
 
         logger.info(f"Saved file to: {file_path} for user {current_user.username}")
@@ -110,7 +137,7 @@ async def upload_slide(
         # Clean up file if it was saved
         if os.path.exists(file_path):
             os.remove(file_path)
-        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to process file. Please ensure it's a valid document and try again.")
 
 @router.get("/health")
 async def health_check():

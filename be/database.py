@@ -16,11 +16,15 @@ DATABASE_URL = os.getenv(
     "postgresql+asyncpg://slideguroo:slideguroo123@localhost:5432/slideguroo_db"
 )
 
-# Create async engine
+# Create async engine with connection pooling
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
-    future=True
+    future=True,
+    pool_size=5,  # Number of connections to maintain
+    max_overflow=10,  # Max connections beyond pool_size
+    pool_pre_ping=True,  # Test connections before using
+    pool_recycle=3600  # Recycle connections after 1 hour
 )
 
 # Create async session factory

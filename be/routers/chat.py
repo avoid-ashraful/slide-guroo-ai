@@ -104,7 +104,7 @@ async def ask_question(
         raise
     except Exception as e:
         logger.error(f"Error answering question: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error answering question: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to answer question. Please try rephrasing or try again later.")
 
 
 @router.get("/history/{lesson_id}")
@@ -155,7 +155,7 @@ async def get_chat_history(
         raise
     except Exception as e:
         logger.error(f"Error fetching chat history: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching chat history: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to fetch chat history. Please try again later.")
 
 
 @router.delete("/history/{lesson_id}")
@@ -205,7 +205,7 @@ async def delete_chat_history(
         raise
     except Exception as e:
         logger.error(f"Error deleting chat history: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error deleting chat history: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to delete chat history. Please try again later.")
 
 
 @router.get("/health")

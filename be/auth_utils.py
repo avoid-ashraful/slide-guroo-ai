@@ -21,7 +21,15 @@ load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError(
+        "SECRET_KEY environment variable must be set. "
+        "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+    )
+if len(SECRET_KEY) < 32:
+    raise ValueError("SECRET_KEY must be at least 32 characters long for security")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 VERIFICATION_TOKEN_EXPIRE_HOURS = 24
@@ -34,6 +42,28 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash"""
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password strength
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter"
+
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+
+    return True, ""
 
 
 def get_password_hash(password: str) -> str:

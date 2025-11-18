@@ -61,7 +61,7 @@ async def generate_topic_lesson(
 
     except Exception as e:
         logger.error(f"Error generating topic lesson: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating lesson: {str(e)}")
+        raise HTTPException(status_code=500, detail="Unable to generate lesson. Please try again or choose a different topic.")
 
 @router.get("/health")
 async def health_check():
